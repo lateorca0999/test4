@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>サンドイッチマスター</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family:sans-serif;
+    background:#f5f5f5;
+    text-align:center;
+}
+
+h1{
+    margin:10px;
+}
+
+.hidden{
+    display:none;
+}
+
+button{
+    padding:10px 20px;
+    font-size:18px;
+    margin:5px;
+}
+
+#ingredientList{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+
+.foodBtn{
+    font-size:40px;
+    margin:5px;
+}
+
+#playArea{
+    position:relative;
+    width:100%;
+    height:480px;
+    background:white;
+    overflow:hidden;
+    border-top:2px solid #ccc;
+}
+
+#bottomBun{
+    position:absolute;
+    bottom:90px;
+    left:50%;
+    transform:translateX(-50%);
+    width:250px;
+    height:40px;
+    background:#d48a3a;
+    border-radius:12px;
+}
+
+#topBun{
+    position:absolute;
+    top:20px;
+    left:20px;
+    width:250px;
+    height:40px;
+
+    background:#c77728;
+    border-radius:12px;
+
+    display:none;
+
+    touch-action:none;
+}
+
+.draggable{
+    position:absolute;
+    width:60px;
+    height:60px;
+
+    font-size:50px;
+
+    touch-action:none;
+}
+
+#result{
+    font-size:22px;
+    margin-top:10px;
+}
+
+</style>
+</head>
+<body>
+
+<h1>🥪 サンドイッチマスター</h1>
+
+<div id="missionScreen">
+
+<h2 id="missionText"></h2>
+
+<button onclick="startGame()">
+スタート
+</button>
+
+</div>
+
+<div id="selectScreen" class="hidden">
+
+<h2>食材を3つ選ぼう</h2>
+
+<div id="ingredientList"></div>
+
+<p>
+選択数:
+<span id="count">0</span>/3
+</p>
+
+<button onclick="finishSelection()">
+決定
+</button>
+
+</div>
+
+<div id="gameScreen" class="hidden">
+
+<h2 id="currentMission"></h2>
+
+<div id="playArea">
+
+<div id="bottomBun"></div>
+
+<div id="topBun"></div>
+
+</div>
+
+</div>
+
+<div id="result"></div>
+
+<script>
+
+const ingredients=[
+
+{
+emoji:"🌶️",
+name:"唐辛子",
+spicy:20,
+sweet:0
+},
+
+{
+emoji:"🍫",
+name:"チョコ",
+spicy:0,
+sweet:20
+},
+
+{
+emoji:"🍌",
+name:"バナナ",
+spicy:0,
+sweet:15
+},
+
+{
+emoji:"🥬",
+name:"レタス",
+spicy:0,
+sweet:0
+},
+
+{
+emoji:"🍅",
+name:"トマト",
+spicy:0,
+sweet:5
+},
+
+{
+emoji:"🧀",
+name:"チーズ",
+spicy:5,
+sweet:5
+},
+
+{
+emoji:"🥓",
+name:"ベーコン",
+spicy:10,
+sweet:0
+}
+
+];
+
+const missions=[
+
+{
+title:"辛いサンドイッチを作ろう",
+target:"spicy"
+},
+
+{
+title:"甘いサンドイッチを作ろう",
+target:"sweet"
+}
+
+];
+
+let mission;
+let selected=[];
+
+const missionText=document.getElementById("missionText");
+
+mission=
+missions[
+Math.floor(
+Math.random()*missions.length
+)
+];
+
+missionText.textContent=
+mission.title;
+
+function startGame(){
+
+document.getElementById(
+"missionScreen"
+).classList.add("hidden");
+
+document.getElementById(
+"selectScreen"
+).classList.remove("hidden");
+
+const list=
+document.getElementById(
+"ingredientList"
+);
+
+ingredients.forEach(food=>{
+
+const btn=
+document.createElement("button");
+
+btn.className="foodBtn";
+
+btn.textContent=
+food.emoji;
+
+btn.onclick=()=>{
+
+if(selected.length>=3)
+return;
+
+selected.push(food);
+
+document.getElementById(
+"count"
+).textContent=
+selected.length;
+
+btn.disabled=true;
+
+};
+
+list.appendChild(btn);
+
+});
+
+}
+
+function finishSelection(){
+
+if(selected.length!==3){
+
+alert("3つ選んでください");
+
+return;
+}
+
+document.getElementById(
+"selectScreen"
+).classList.add("hidden");
+
+document.getElementById(
+"gameScreen"
+).classList.remove("hidden");
+
+document.getElementById(
+"currentMission"
+).textContent=
+mission.title;
+
+createIngredients();
+
+}
+
+function createIngredients(){
+
+const playArea=
+document.getElementById(
+"playArea"
+);
+
+selected.forEach((food,i)=>{
+
+const div=
+document.createElement("div");
+
+div.className=
+"draggable";
+
+div.textContent=
+food.emoji;
+
+div.dataset.index=i;
+
+div.style.left=
+(20+i*80)+"px";
+
+div.style.top="20px";
+
+enableDrag(div);
+
+playArea.appendChild(div);
+
+});
+
+const topBun=
+document.getElementById(
+"topBun"
+);
+
+topBun.style.display=
+"block";
+
+enableDrag(topBun,true);
+
+}
+
+function enableDrag(el,isTop=false){
+
+let dragging=false;
+
+let offsetX=0;
+let offsetY=0;
+
+el.addEventListener(
+"pointerdown",
+e=>{
+
+dragging=true;
+
+offsetX=
+e.offsetX;
+
+offsetY=
+e.offsetY;
+
+});
+
+document.addEventListener(
+"pointermove",
+e=>{
+
+if(!dragging)
+return;
+
+const rect=
+document.getElementById(
+"playArea"
+).getBoundingClientRect();
+
+el.style.left=
+(e.clientX-rect.left-offsetX)
++"px";
+
+el.style.top=
+(e.clientY-rect.top-offsetY)
++"px";
+
+});
+
+document.addEventListener(
+"pointerup",
+()=>{
+
+if(!dragging)
+return;
+
+dragging=false;
+
+if(isTop){
+
+checkFinish();
+
+}
+
+});
+
+}
+
+function checkFinish(){
+
+const top=
+document.getElementById(
+"topBun"
+);
+
+const y=
+parseInt(top.style.top);
+
+if(y>220){
+
+grade();
+
+}
+
+}
+
+function grade(){
+
+let themeScore=0;
+
+selected.forEach(food=>{
+
+themeScore +=
+food[mission.target];
+
+});
+
+if(themeScore>50)
+themeScore=50;
+
+let center=0;
+
+document
+.querySelectorAll(".draggable")
+.forEach(item=>{
+
+if(item.id==="topBun")
+return;
+
+const x=
+parseInt(item.style.left);
+
+center+=x;
+
+});
+
+center/=3;
+
+let diff=
+Math.abs(
+center-130
+);
+
+let balanceScore=
+30-diff/5;
+
+if(balanceScore<0)
+balanceScore=0;
+
+let visualScore=20;
+
+let finalScore=
+Math.round(
+themeScore+
+balanceScore+
+visualScore
+);
+
+if(finalScore>100)
+finalScore=100;
+
+document.getElementById(
+"result"
+).innerHTML=`
+
+<h2>完成！</h2>
+
+<p>
+テーマ点:${Math.round(themeScore)}
+</p>
+
+<p>
+配置点:${Math.round(balanceScore)}
+</p>
+
+<p>
+見た目点:${visualScore}
+</p>
+
+<h1>
+総合 ${finalScore} 点
+</h1>
+
+`;
+
+}
+
+</script>
+
+</body>
+</html>
